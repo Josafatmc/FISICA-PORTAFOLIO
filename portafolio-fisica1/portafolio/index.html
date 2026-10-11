@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Portafolio de Física I — Física que mueve al software · CENFOTEC</title>
+  <meta name="description" content="Portafolio interactivo de Física I (Universidad CENFOTEC): cinemática y dinámica aplicadas a drones, videojuegos, hábitats espaciales, neumáticos de Fórmula 1 y controles hápticos.">
+  <meta name="color-scheme" content="dark">
+
+  <!-- Tipografías (Google Fonts). Si no cargan, se usan las de respaldo definidas en styles.css -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- KaTeX 0.16.9 (ecuaciones). Se carga desde cdnjs; ver README → "Dependencias externas" -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#temas">Saltar al contenido</a>
+
+  <header class="topbar" id="topbar">
+    <a class="brand" href="#inicio" aria-label="Inicio del portafolio">
+      <svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><circle cx="16" cy="16" r="12" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4 22 C 10 4, 22 4, 28 22" fill="none" stroke="var(--c-vel)" stroke-width="1.8"/><circle cx="16" cy="9.2" r="2.2" fill="var(--c-pos)"/></svg>
+      <span>Física I · Portafolio</span>
+    </a>
+    <button class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="sidebar">Índice</button>
+  </header>
+
+  <div class="app">
+    <nav class="sidebar" id="sidebar" aria-label="Índice de temas">
+      <p class="side-title">Temas del Avance 1</p>
+      <ol class="side-list" id="sideList"></ol>
+      <p class="side-title">Más</p>
+      <ul class="side-list plain">
+        <li><a href="#metodo">Cómo leer este portafolio</a></li>
+        <li><a href="#referencias">Referencias</a></li>
+        <li><a href="#proximos">Próximos avances</a></li>
+      </ul>
+      <div class="legend" aria-label="Código de color de las variables">
+        <p class="side-title">Código de color</p>
+        <span><i style="background:var(--c-pos)"></i>posición</span>
+        <span><i style="background:var(--c-vel)"></i>velocidad</span>
+        <span><i style="background:var(--c-acc)"></i>aceleración</span>
+        <span><i style="background:var(--c-force)"></i>fuerza</span>
+        <span><i style="background:var(--c-result)"></i>resultado</span>
+      </div>
+    </nav>
+
+    <main class="main">
+      <section class="hero" id="inicio">
+        <canvas id="heroCanvas" aria-hidden="true"></canvas>
+        <div class="hero-text">
+          <p class="hero-kicker" id="heroKicker">Universidad CENFOTEC · FUN-18 Física I · Portafolio de evidencias, Avance 1</p>
+          <h1>La física que mueve al software</h1>
+          <p class="hero-lead">Cinco sistemas tecnológicos reales —un dron de reparto, el salto de un personaje, un hábitat giratorio, una llanta de Fórmula 1 y un gatillo háptico— explicados con las ecuaciones que los gobiernan. Cada tema trae algo que se puede mover: cambie un parámetro y vea cómo responde el modelo.</p>
+          <p class="hero-meta" id="heroMeta"></p>
+          <a class="btn primary" href="#indice">Ver los cinco temas</a>
+        </div>
+      </section>
+
+      <section class="block-section" id="indice" aria-labelledby="indice-title">
+        <h2 id="indice-title">Índice de temas</h2>
+        <p class="lead">Cada tarjeta lleva directo a la entrada del tema, con el nombre tal como aparece en la consigna y el tipo de recurso que le corresponde.</p>
+        <div class="index-grid" id="indexGrid"></div>
+        <noscript><p class="callout hipotesis">Este portafolio necesita JavaScript para mostrar los temas y sus simulaciones.</p></noscript>
+      </section>
+
+      <section class="block-section" id="metodo" aria-labelledby="metodo-title">
+        <h2 id="metodo-title">Cómo leer este portafolio</h2>
+        <div class="grid-2">
+          <div>
+            <p>Cada entrada separa con claridad cuatro tipos de afirmación, para que se pueda verificar de dónde sale cada cosa:</p>
+            <ul class="tag-legend">
+              <li><span class="tag hecho">Hecho documentado</span> respaldado por una fuente citada.</li>
+              <li><span class="tag calculo">Resultado calculado</span> sale de una ecuación y parámetros declarados.</li>
+              <li><span class="tag supuesto">Supuesto del modelo</span> simplificación adoptada para poder calcular.</li>
+              <li><span class="tag hipotesis">Hipótesis o ilustrativo</span> plausible, pero no demostrado aquí.</li>
+            </ul>
+          </div>
+          <div>
+            <p>Los datos de las gráficas son <strong>generados a partir de modelos declarados</strong>, no mediciones, salvo que se diga lo contrario. Donde no se encontraron datos públicos fiables (neumáticos de Fórmula 1), la curva está marcada como hipotética y no se atribuye a ningún fabricante ni experimento.</p>
+            <p>Las citas aparecen como <a class="cite" href="#referencias">(Autor, año)</a> y enlazan a la lista de referencias.</p>
+          </div>
+        </div>
+      </section>
+
+      <div id="temas"></div>
+
+      <section class="block-section" id="referencias" aria-labelledby="ref-title">
+        <h2 id="ref-title">Referencias</h2>
+        <p class="lead">Formato APA 7. «Consultado» indica que el enlace se abrió y se leyó durante la elaboración; los que no tienen esa marca deben verificarse manualmente antes de entregar.</p>
+        <ol class="refs" id="refList"></ol>
+      </section>
+
+      <section class="block-section" id="proximos" aria-labelledby="prox-title">
+        <h2 id="prox-title">Próximos avances</h2>
+        <p class="lead">La estructura ya está preparada para recibir estos ocho temas sin tocar los cinco anteriores. No forman parte de la evaluación de este avance.</p>
+        <div class="upcoming" id="upcomingList"></div>
+      </section>
+
+      <footer class="footer" id="footer"></footer>
+    </main>
+  </div>
+
+  <!-- Orden de carga: datos → utilidades → temas → arranque -->
+  <script src="data/site.js"></script>
+  <script src="data/references.js"></script>
+  <script src="data/upcoming.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+  <script src="js/physics.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/registry.js"></script>
+  <script src="js/topics/tema1-dron.js"></script>
+  <script src="js/topics/tema2-salto.js"></script>
+  <script src="js/topics/tema3-habitat.js"></script>
+  <script src="js/topics/tema4-llantas.js"></script>
+  <script src="js/topics/tema5-haptico.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
