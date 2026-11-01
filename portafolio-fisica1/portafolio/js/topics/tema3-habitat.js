@@ -142,6 +142,10 @@
         <p><strong>Industria:</strong> diseño de hábitats y vehículos espaciales. <strong>Sistema concreto:</strong> las herramientas de cálculo y visualización de gravedad artificial de Theodore Hall, entre ellas «SpinCalc», que relaciona radio, velocidad de rotación, nivel de gravedad y gradiente, y compara cada combinación con las «zonas de confort» propuestas por varios autores ${cite('hall-spincalc')}.</p>
         <p>${tag('hecho')} La tesis doctoral de Hall explica por qué el diseño no es libre: la rotación causa incomodidad que impone límites al radio y a la velocidad angular, y el movimiento dentro de un entorno que gira introduce aceleraciones de Coriolis que perjudican la habitabilidad ${cite('hall-1994')}. No existe todavía un hábitat giratorio operativo: es un concepto de ingeniería, y lo que se programa son modelos para explorar su espacio de diseño.</p>
         <p><strong>Por qué modelar la física y no usar valores fijos:</strong> la relación ${ie('a_c=\\omega^2 r')} deja intercambiar radio por velocidad angular, y ese compromiso es el corazón del problema. El resumen de la NASA lo plantea así: aumentar el radio es mucho más caro que aumentar la rotación, así que importa saber la rotación más alta que los humanos toleran ${cite('ntrs-ag')}. Una tabla de «tamaños recomendados» fija no permite evaluar ese compromiso ni responder preguntas como «¿y con 0,38 g, la gravedad marciana?».</p>
+        ${tradeoff(
+          `<ul><li>Una sola ecuación permite explorar todo el espacio de diseño (radio, rpm, nivel de g) antes de fabricar nada.</li><li>Aparecen solos los efectos secundarios que importan a la salud: el gradiente de «peso» entre pies y cabeza y la aceleración de Coriolis.</li><li>El mismo modelo sirve para el software de simulación del hábitat y para entrenar a la tripulación.</li></ul>`,
+          `<ul><li>El modelo de movimiento circular uniforme no dice cuánta rotación tolera una persona: ese límite viene de experimentos, no de la ecuación.</li><li>Un radio grande cuesta masa y dinero; el modelo muestra el compromiso, pero no lo resuelve.</li><li>Ignora el cabeceo del hábitat, el balanceo de masas y el movimiento de la tripulación, que exigen modelos de cuerpo rígido más complejos.</li></ul>`
+        )}
       </div>
 
       <div class="tblock">
@@ -303,7 +307,7 @@
         $('db2').textContent = `gradiente (h = 1,8 m): ${fmt(grad, 2)} %`;
         $('db3').textContent = `a_cor para u = 1 m/s: ${fmt(P.coriolis(s.omega, 1), 3)} m/s² (${fmt(cor, 1)} % de a_c)`;
         // curvas
-        const rs = P.linspace(20, 1000, 120), c = { a: '#f0717f', b: '#b7a1ff', c: '#7ddbb0' };
+        const rs = P.linspace(20, 1000, 120), c = { a: UI.cssVar('--c-acc', '#e36574'), b: UI.cssVar('--c-force', '#9882dd'), c: UI.cssVar('--c-result', '#49a980') };
         const curve = (n) => rs.map((x) => P.omegaToRpm(P.omegaForG(x, n)));
         chart.update({
           series: [

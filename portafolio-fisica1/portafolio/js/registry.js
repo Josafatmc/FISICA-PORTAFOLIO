@@ -16,6 +16,8 @@
 (function (root) {
   'use strict';
   const topics = [];
+  /** Unidad temática de cada avance (agrupa índice, menú y mapa de conexiones). */
+  const UNITS = { 'Avance 1': 'Cinemática y dinámica', 'Avance 2': 'Leyes de conservación y gravitación' };
   const byId = (id) => (root.REFERENCES || []).find((r) => r.id === id);
 
   function register(topic) {
@@ -40,7 +42,7 @@
   /** Cabecera estándar de un tema: número, título exacto, conceptos y recurso prescrito. */
   function head(t) {
     return `<div class="topic-head">
-      <span class="topic-num">Tema ${t.number} de 5 · Avance 1</span>
+      <span class="topic-num">Tema ${t.number} de ${topics.length} · ${t.avance || 'Avance 1'} · ${UNITS[t.avance || 'Avance 1'] || ''}</span>
       <h2 id="${t.id}-title">${t.title}</h2>
       <ul class="chips">${(t.concepts || []).map((c) => `<li class="chip">${c}</li>`).join('')}<li class="chip res">Recurso prescrito: ${t.resource}</li></ul>
     </div>`;
@@ -63,5 +65,5 @@
     }).join('')}</ul></div>`;
   }
 
-  root.Portfolio = { topics, register, cite, byId, head, connections, sources };
+  root.Portfolio = { topics, register, cite, byId, head, connections, sources, UNITS };
 })(window);

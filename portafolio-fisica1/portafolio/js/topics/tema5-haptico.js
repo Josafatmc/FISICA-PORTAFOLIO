@@ -42,6 +42,11 @@
         <p><strong>Producto:</strong> el mando DualSense de PlayStation 5, de Sony, y sus gatillos adaptativos. <strong>Industria:</strong> videojuegos y periféricos hápticos.</p>
         <p>${tag('hecho')} Los gatillos del DualSense pueden variar su resistencia según lo que ocurra en el juego; un ejemplo citado es simular la resistencia de los pedales de distintos coches en Gran Turismo 7, o el tensado de un arco, que se vuelve más duro cuanto más se presiona. El mecanismo combina un motor, una espiral y un engranaje, y el comportamiento lo controla el software ${cite('notebookcheck-ds')}. Otra reseña describe el efecto sentido: poder notar cómo aumenta la tensión de la cuerda al tirar de ella, algo que el mando anterior no permitía ${cite('tomsguide-ds')}.</p>
         <p><strong>Por qué modelar la física:</strong> si cada arma o vehículo tuviera una «sensación» grabada, habría que producir un perfil por cada caso y no habría coherencia con el estado del juego. Con ${ie('F=-kx')} basta cambiar ${ie('k')} (más duro, más blando) y el punto de contacto para obtener un perfil nuevo, y el valor se puede ajustar en vivo según el arma, el cansancio del personaje o la cuerda del arco.</p>
+        ${tradeoff(
+          `<ul><li>Un solo modelo (${ie('k')}, punto de contacto y fuerza máxima) genera cualquier «sensación» nueva sin grabar perfiles.</li><li>La fuerza responde al estado del juego en cada cuadro: un arco más tenso, un freno que se bloquea.</li><li>La tercera ley queda garantizada: el dedo siente exactamente la fuerza que el motor aplica.</li></ul>`,
+          `<ul><li>El motor tiene un torque máximo: el resorte virtual satura y no puede imitar objetos muy rígidos.</li><li>Hay que ajustar k a mano por juego y por arma; un valor físico «real» suele sentirse demasiado duro o blando.</li><li>Más fuerza implica más consumo de batería y más ruido del mecanismo.</li></ul>`
+        )}
+        <p><strong>Frente a la alternativa no física:</strong> una vibración pregrabada o una resistencia fija no cambia con la posición del gatillo, por lo que no se siente como tensar algo; la fuerza restauradora proporcional al desplazamiento es justamente lo que el cerebro reconoce como un resorte.</p>
       </div>
 
       <div class="tblock">

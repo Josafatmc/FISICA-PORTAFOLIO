@@ -191,7 +191,7 @@
         chY.update({ xMin: 0, xMax: m.tFlight, series: [{ name: 'y(t)', color: c.pos, x: cv.t, y: cv.y }] });
         chV.update({ xMin: 0, xMax: m.tFlight, series: [{ name: 'v_y(t)', color: c.vel, x: cv.t, y: cv.vy }] });
         // comparación (k = 1)
-        const list = PRESETS.map((pr, i) => ({ pr, color: ['#5ec8e5', '#f0717f', '#b7a1ff', '#7ddbb0'][i] }));
+        const list = PRESETS.map((pr, i) => ({ pr, color: [UI.cssVar('--c-pos', '#33a3bf'), UI.cssVar('--c-acc', '#e36574'), UI.cssVar('--c-force', '#9882dd'), UI.cssVar('--c-result', '#49a980')][i] }));
         const series = list.map(({ pr, color }) => {
           const mm = P.jumpModel({ v0: p.v0, g: pr.g }); const q = curve(mm, 200);
           return { name: `${pr.name.split(' (')[0]} (${fmt(pr.g, 2)})`, color, x: q.t, y: q.y };

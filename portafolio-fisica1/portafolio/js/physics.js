@@ -258,6 +258,137 @@
   /** Energía de un resorte lineal ideal: ½ k x² (J con k en N/m y x en m). */
   const springEnergy = (k, x) => 0.5 * k * x * x;
 
+  /* ====================== TEMA 6 — Frenado regenerativo ====================== */
+
+  const MPH = 0.44704; // m/s por mph (exacto)
+
+  /**
+   * Balance de energía de un vehículo eléctrico sobre un ciclo de manejo muestreado cada dt.
+   * En cada intervalo, con v̄ = (v_i + v_{i+1})/2 y a = (v_{i+1} − v_i)/dt:
+   *   P_rueda = (m a + C_rr m g + ½ ρ C_d A v̄²) · v̄
+   * P_rueda > 0 → la batería entrega P/η_tracción.
+   * P_rueda < 0 → hay que frenar: el motor recupera min(|P|, P_max)·η_regen y el resto
+   * lo disipan los frenos de fricción como calor.
+   * Devuelve series acumuladas en kWh y totales.
+   */
+  function regenCycle(v, { m, cdA, crr, rho = 1.2, etaDrive = 0.9, etaRegen = 0.7, pRegenMaxKW = 60, regen = true, dt = 1 }) {
+    if (!(m > 0) || !(cdA >= 0) || !(crr >= 0)) throw new Error('Parámetros del vehículo inválidos.');
+    const J2kWh = 1 / 3.6e6, pMax = pRegenMaxKW * 1000;
+    let eBat = 0, eRec = 0, eFric = 0, eLoss = 0, eBrake = 0, dist = 0;
+    const t = [0], bat = [0], rec = [0], fric = [0], loss = [0], net = [0], kin = [0];
+    for (let i = 0; i < v.length - 1; i++) {
+      const vb = (v[i] + v[i + 1]) / 2, a = (v[i + 1] - v[i]) / dt;
+      const fRes = vb > 0 ? crr * m * G0 + 0.5 * rho * cdA * vb * vb : 0;
+      const pWheel = (m * a + fRes) * vb;
+      eLoss += fRes * vb * dt;
+      if (pWheel >= 0) eBat += (pWheel / etaDrive) * dt;
+      else {
+        const pb = -pWheel, toMotor = regen ? Math.min(pb, pMax) : 0;
+        eBrake += pb * dt; eRec += toMotor * etaRegen * dt; eFric += (pb - toMotor) * dt;
+      }
+      dist += vb * dt;
+      t.push((i + 1) * dt); bat.push(eBat * J2kWh); rec.push(eRec * J2kWh); fric.push(eFric * J2kWh);
+      loss.push(eLoss * J2kWh); net.push((eBat - eRec) * J2kWh); kin.push(0.5 * m * v[i + 1] * v[i + 1] / 1000);
+    }
+    return {
+      t, bat, rec, fric, loss, net, kin, distKm: dist / 1000,
+      totals: { bat: eBat * J2kWh, rec: eRec * J2kWh, fric: eFric * J2kWh, brake: eBrake * J2kWh, loss: eLoss * J2kWh, net: (eBat - eRec) * J2kWh },
+      recoveredPct: eBrake > 0 ? (eRec / eBrake) * 100 : 0,
+      whPerKm: dist > 0 ? ((eBat - eRec) / 3600) / (dist / 1000) : 0,
+    };
+  }
+  /** Energía cinética ½ m v² (J). */
+  const kineticEnergy = (m, v) => 0.5 * m * v * v;
+
+  /* ====================== TEMA 7 — Coeficiente de restitución ====================== */
+
+  /**
+   * Choque frontal en 1D con coeficiente de restitución e = −(v2' − v1')/(v2 − v1).
+   * Conserva el momento lineal para cualquier e; la energía cinética solo si e = 1.
+   */
+  function collide1D(m1, v1, m2, v2, e) {
+    if (!(m1 > 0) || !(m2 > 0) || !(e >= 0)) throw new Error('Masas positivas y e ≥ 0.');
+    const M = m1 + m2, p = m1 * v1 + m2 * v2;
+    const v1p = (p + m2 * e * (v2 - v1)) / M, v2p = (p + m1 * e * (v1 - v2)) / M;
+    const K0 = 0.5 * m1 * v1 * v1 + 0.5 * m2 * v2 * v2, K1 = 0.5 * m1 * v1p * v1p + 0.5 * m2 * v2p * v2p;
+    return { v1p, v2p, p0: p, p1: m1 * v1p + m2 * v2p, K0, K1, dK: K1 - K0 };
+  }
+  /** Altura del rebote n (analítica, sin aire): h_n = e^{2n} h_0. */
+  const bounceHeight = (h0, e, n) => h0 * Math.pow(e, 2 * n);
+  /** Tiempo total hasta el reposo para 0 ≤ e < 1:  t = √(2h₀/g)·(1 + e)/(1 − e). */
+  const timeToRest = (h0, e, g = G0) => (e < 1 ? Math.sqrt((2 * h0) / g) * ((1 + e) / (1 - e)) : Infinity);
+  /** Cómo combina un motor tipo Unity el rebote de dos materiales. */
+  function combineRestitution(a, b, mode) {
+    switch (mode) {
+      case 'min': return Math.min(a, b);
+      case 'max': return Math.max(a, b);
+      case 'mul': return a * b;
+      default: return (a + b) / 2;
+    }
+  }
+  /**
+   * Un paso de motor de juego: Euler semi-implícito con paso fijo y resolución de contacto
+   * con el suelo (y = r). Si la rapidez de llegada es menor que el umbral, la pelota se detiene.
+   */
+  function bounceStep(s, { g, e, dt, threshold = 0, radius = 0 }) {
+    let { y, vy } = s;
+    vy -= g * dt; y += vy * dt;
+    let hit = false;
+    if (y <= radius && vy < 0) {
+      hit = true; y = radius;
+      vy = -vy < threshold ? 0 : -e * vy;
+    }
+    return { y, vy, hit };
+  }
+
+  /* ====================== TEMA 8 — Ruedas de reacción ====================== */
+
+  /**
+   * Conservación del momento angular de un eje: I_s ω_s + I_w ω_w = L (constante).
+   * Si la rueda pasa de ω_w0 a ω_w, el cuerpo cambia ω_s = (L − I_w ω_w)/I_s.
+   */
+  function reactionWheel({ Is, Iw, wheelRpm, wheelRpm0 = 0, bodyRate0 = 0 }) {
+    if (!(Is > 0) || !(Iw > 0)) throw new Error('Los momentos de inercia deben ser positivos.');
+    const w0 = rpmToOmega(wheelRpm0), w = rpmToOmega(wheelRpm);
+    const L = Is * bodyRate0 + Iw * w0;
+    const ws = (L - Iw * w) / Is;
+    return { L, ws, wheelOmega: w, hWheel: Iw * w, hBody: Is * ws };
+  }
+  /** Torque que la rueda ejerce sobre el satélite: τ = −I_w α_w (tercera ley de Newton). */
+  const wheelTorque = (Iw, alpha) => -Iw * alpha;
+  /** Maniobra «bang-bang» de un ángulo θ (rad) con torque máximo τ: acelera la mitad, frena la otra.
+   *  t = 2√(θ I_s / τ),  ω_pico = α·t/2,  momento que debe absorber la rueda h = I_s ω_pico. */
+  function slewTime(theta, Is, tau) {
+    if (!(theta > 0) || !(Is > 0) || !(tau > 0)) throw new Error('θ, I y τ deben ser positivos.');
+    const alpha = tau / Is, tHalf = Math.sqrt(theta / alpha);
+    return { t: 2 * tHalf, wPeak: alpha * tHalf, hPeak: Is * alpha * tHalf };
+  }
+
+  /* ====================== TEMA 9 — Asistencia gravitatoria ====================== */
+
+  const GM_SUN = 1.32712440018e11; // km³/s²
+  const AU_KM = 149597870.7;
+  /** Rapidez de escape del Sol a la distancia r (UA), km/s:  v_esc = √(2 GM / r). */
+  const solarEscape = (rAU) => Math.sqrt((2 * GM_SUN) / (rAU * AU_KM));
+  /** Energía orbital específica ε = v²/2 − GM/r (km²/s²); ε ≥ 0 → trayectoria no ligada al Sol. */
+  const specificEnergy = (vKms, rAU) => (vKms * vKms) / 2 - GM_SUN / (rAU * AU_KM);
+
+  /**
+   * Sobrevuelo en el plano: en el marco del planeta la rapidez de llegada y salida es la
+   * misma (v∞); solo gira un ángulo δ dado por  sin(δ/2) = 1 / (1 + r_p v∞² / μ).
+   * En el marco del Sol: v = U + v∞ (vectores), con U la velocidad orbital del planeta.
+   * phiIn: ángulo de v∞ de llegada respecto a U (grados). side: +1 pasa por detrás del planeta.
+   */
+  function flyby({ mu, rp, vinf, U, phiIn, side = 1 }) {
+    if (!(mu > 0) || !(rp > 0) || !(vinf > 0)) throw new Error('μ, r_p y v∞ deben ser positivos.');
+    const delta = 2 * Math.asin(1 / (1 + (rp * vinf * vinf) / mu));
+    const a0 = (phiIn * Math.PI) / 180, a1 = a0 + side * delta;
+    const vin = { x: U + vinf * Math.cos(a0), y: vinf * Math.sin(a0) };
+    const vout = { x: U + vinf * Math.cos(a1), y: vinf * Math.sin(a1) };
+    const sIn = Math.hypot(vin.x, vin.y), sOut = Math.hypot(vout.x, vout.y);
+    return { delta, deltaDeg: (delta * 180) / Math.PI, vin, vout, sIn, sOut, dv: sOut - sIn, a0, a1 };
+  }
+
   const api = {
     G0, clamp, isNum, linspace,
     catmullRomPath, cumulativeLength, pointAtArcLength, trapezoidalProfile, generateDroneData,
@@ -265,6 +396,10 @@
     rpmToOmega, omegaToRpm, spinState, omegaForG, radiusForG, gravityGradientPct, coriolis,
     blockFriction, gripVsTemperature, operatingWindow, muVsLoad, lateralForce, loadTransferLoss, maxCornerSpeed,
     virtualSpringForce, springEnergy,
+    MPH, regenCycle, kineticEnergy,
+    collide1D, bounceHeight, timeToRest, combineRestitution, bounceStep,
+    reactionWheel, wheelTorque, slewTime,
+    GM_SUN, AU_KM, solarEscape, specificEnergy, flyby,
   };
   root.Physics = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

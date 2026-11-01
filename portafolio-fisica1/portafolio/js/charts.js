@@ -39,7 +39,7 @@
       this.opts = Object.assign({
         title: '', xLabel: '', xUnit: '', yLabel: '', yUnit: '',
         series: [], cursorX: null, bands: [], xMin: null, xMax: null, yMin: null, yMax: null,
-        includeZeroY: false, equalAspect: false, decimalsTooltip: 2, ariaLabel: '',
+        includeZeroY: false, equalAspect: false, decimalsTooltip: 2, ariaLabel: '', xFormat: null,
       }, opts);
       this.hover = null;
       canvas.setAttribute('role', 'img');
@@ -134,7 +134,7 @@
       for (const v of tx.ticks) {
         const px = X(v); if (px < L.m.l - 1 || px > L.m.l + L.pw + 1) continue;
         ctx.strokeStyle = colGrid; ctx.beginPath(); ctx.moveTo(px, L.m.t); ctx.lineTo(px, L.m.t + L.ph); ctx.stroke();
-        ctx.fillStyle = colText; ctx.fillText(fmt(v, tx.step), px, L.m.t + L.ph + 6);
+        ctx.fillStyle = colText; ctx.fillText(o.xFormat ? o.xFormat(v) : fmt(v, tx.step), px, L.m.t + L.ph + 6);
       }
       ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
       for (const v of ty.ticks) {
@@ -217,7 +217,7 @@
         if (yv != null) rows.push({ color: s.color, text: s.name + ': ' + yv.toLocaleString('es-CR', { maximumFractionDigits: d }) + (o.yUnit ? ' ' + o.yUnit : '') });
       }
       if (!rows.length) return;
-      const head = o.xLabel.split(' ')[0] + ' = ' + this.hover.toLocaleString('es-CR', { maximumFractionDigits: d }) + (o.xUnit ? ' ' + o.xUnit : '');
+      const head = o.xLabel.split(' ')[0] + ' = ' + (o.xFormat ? o.xFormat(this.hover, true) : this.hover.toLocaleString('es-CR', { maximumFractionDigits: d })) + (o.xUnit ? ' ' + o.xUnit : '');
       ctx.font = '12px "IBM Plex Sans", sans-serif';
       const wBox = Math.max(ctx.measureText(head).width, ...rows.map((r) => ctx.measureText(r.text).width + 14)) + 16;
       const hBox = 22 + rows.length * 17;
